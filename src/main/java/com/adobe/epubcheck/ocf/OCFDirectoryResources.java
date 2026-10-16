@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -80,14 +81,7 @@ public class OCFDirectoryResources implements OCFResources
             throw new UncheckedIOException(new IOException("symbolic links are disallowed"));
           }
 
-          // Build the properties map
-          final Map<FeatureEnum, String> properties = ImmutableMap.<FeatureEnum, String> builder()
-              .put(FeatureEnum.SIZE, String.valueOf(attributes.size()))
-              .put(FeatureEnum.COMPRESSED_SIZE, String.valueOf(attributes.size()))
-              .put(FeatureEnum.COMPRESSION_METHOD, "Stored")
-              .put(FeatureEnum.SHA_256, getSHAHash(path))
-              .put(FeatureEnum.CREATION_DATE, attributes.creationTime().toString())
-              .build();
+
 
           return new OCFResource()
           {
@@ -114,8 +108,41 @@ public class OCFDirectoryResources implements OCFResources
             @Override
             public Map<FeatureEnum, String> getProperties()
             {
-              return properties;
+              return new java.util.AbstractMap<FeatureEnum, String>() {
+                private final Map<FeatureEnum, String> delegate = ImmutableMap.<FeatureEnum, String> builder()
+                  .put(FeatureEnum.SIZE, String.valueOf(attributes.size()))
+                  .put(FeatureEnum.COMPRESSED_SIZE, String.valueOf(attributes.size()))
+                  .put(FeatureEnum.COMPRESSION_METHOD, "Stored")
+                  .put(FeatureEnum.CREATION_DATE, attributes.creationTime().toString())
+                  .build();
+
+                @Override
+                public java.util.Set<Map.Entry<FeatureEnum, String>> entrySet() {
+                  Map<FeatureEnum, String> fullMap = new HashMap<>(delegate);
+                  fullMap.put(FeatureEnum.SHA_256, getSHAHash(path));
+                  return fullMap.entrySet();
+                }
+
+                @Override
+                public String get(Object key) {
+                  if (key == FeatureEnum.SHA_256) return getSHAHash(path);
+                  return delegate.get(key);
+                }
+
+                @Override
+                public boolean containsKey(Object key) {
+                  if (key == FeatureEnum.SHA_256) return true;
+                  return delegate.containsKey(key);
+                }
+
+                @Override
+                public int size() {
+                  return delegate.size() + 1;
+                }
+              };
             }
+
+
 
             @Override
             public String getPath()
