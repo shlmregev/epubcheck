@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.zip.ZipEntry;
@@ -50,15 +51,6 @@ public class OCFZipResources implements OCFResources
       {
         final ZipEntry entry = entries.nextElement();
 
-        final Map<FeatureEnum, String> properties = ImmutableMap.<FeatureEnum, String> builder()
-            .put(FeatureEnum.SIZE, String.valueOf(entry.getSize()))
-            .put(FeatureEnum.COMPRESSED_SIZE, String.valueOf(entry.getCompressedSize()))
-            .put(FeatureEnum.COMPRESSION_METHOD, getCompressionMethod(entry))
-            .put(FeatureEnum.SHA_256, getSHAHash(entry, zip))
-            .put(FeatureEnum.CREATION_DATE,
-                new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date(entry.getTime())))
-            .build();
-        
         return new OCFResource()
         {
           @Override
@@ -83,8 +75,42 @@ public class OCFZipResources implements OCFResources
           @Override
           public Map<FeatureEnum, String> getProperties()
           {
-            return properties;
+            return new java.util.AbstractMap<FeatureEnum, String>() {
+              private final Map<FeatureEnum, String> delegate = ImmutableMap.<FeatureEnum, String> builder()
+                .put(FeatureEnum.SIZE, String.valueOf(entry.getSize()))
+                .put(FeatureEnum.COMPRESSED_SIZE, String.valueOf(entry.getCompressedSize()))
+                .put(FeatureEnum.COMPRESSION_METHOD, getCompressionMethod(entry))
+                .put(FeatureEnum.CREATION_DATE,
+                    new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date(entry.getTime())))
+                .build();
+
+              @Override
+              public java.util.Set<Map.Entry<FeatureEnum, String>> entrySet() {
+                Map<FeatureEnum, String> fullMap = new HashMap<>(delegate);
+                fullMap.put(FeatureEnum.SHA_256, getSHAHash(entry, zip));
+                return fullMap.entrySet();
+              }
+
+              @Override
+              public String get(Object key) {
+                if (key == FeatureEnum.SHA_256) return getSHAHash(entry, zip);
+                return delegate.get(key);
+              }
+
+              @Override
+              public boolean containsKey(Object key) {
+                if (key == FeatureEnum.SHA_256) return true;
+                return delegate.containsKey(key);
+              }
+
+              @Override
+              public int size() {
+                return delegate.size() + 1;
+              }
+            };
           }
+
+
 
           @Override
           public String getPath()
