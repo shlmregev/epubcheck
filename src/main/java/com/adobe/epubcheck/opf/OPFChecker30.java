@@ -41,6 +41,8 @@ import com.adobe.epubcheck.util.FeatureEnum;
 import com.adobe.epubcheck.vocab.DCMESVocab;
 import com.adobe.epubcheck.vocab.MediaOverlaysVocab;
 import com.adobe.epubcheck.vocab.PackageVocabs;
+import com.adobe.epubcheck.vocab.Property;
+import com.adobe.epubcheck.vocab.RenditionVocabs;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
@@ -240,11 +242,7 @@ public class OPFChecker30 extends OPFChecker
     }
 
     // check properties
-    if (item.getProperties()
-        .contains(PackageVocabs.ITEM_VOCAB.get(PackageVocabs.ITEM_PROPERTIES.DATA_NAV)))
-    {
-      report.message(MessageId.OPF_077, item.getLocation());
-    }
+    checkSpineItemProperties(item, opfHandler);
 
     // check that spine items have content document fallback
     String mimeType = item.getMimeType();
@@ -258,6 +256,33 @@ public class OPFChecker30 extends OPFChecker
       {
         report.message(MessageId.OPF_044, item.getLocation(), mimeType);
       }
+    }
+  }
+
+  private void checkSpineItemProperties(OPFItem item, OPFHandler handler) {
+    MetadataSet metadata = ((OPFHandler30) opfHandler).getMetadata();
+    Set<Property> properties = item.getProperties();
+
+    // Check page spreads are only used on pre-paginated content
+    if (!item.isFixedLayout()
+        || metadata.containsPrimary(
+            RenditionVocabs.META_VOCAB.get(RenditionVocabs.META_PROPERTIES.LAYOUT), "roll"))
+    {
+      for (Property property : properties)
+      {
+        if (RenditionVocabs.SPREAD_PROPERTIES.contains(property))
+        {
+
+          report.message(MessageId.OPF_100, item.getLocation(), property.getPrefixedName());
+        }
+      }
+    }
+
+    // Check the spine document is not a Data Navigation document
+    if (properties
+        .contains(PackageVocabs.ITEM_VOCAB.get(PackageVocabs.ITEM_PROPERTIES.DATA_NAV)))
+    {
+      report.message(MessageId.OPF_077, item.getLocation());
     }
   }
 
@@ -564,17 +589,16 @@ public class OPFChecker30 extends OPFChecker
 
   public static boolean isBlessedAudioType(String type)
   {
-    return type.equals("audio/mpeg") || type.equals("audio/mp4") || type.matches("audio/ogg\\s*;\\s*codecs=opus");
+    return type.equals("audio/mpeg")
+        || type.equals("audio/mp4")
+        || type.equals("audio/mp4;codecs=aac")
+        || type.equals("audio/mp4;codecs=opus")
+        || type.matches("audio/ogg;codecs=opus");
   }
 
   public static boolean isVideoType(String type)
   {
     return type != null && type.startsWith("video/");
-  }
-
-  public static boolean isBlessedVideoType(String type)
-  {
-    return isVideoType(type);
   }
 
   public static boolean isCommonVideoType(String type)
@@ -605,9 +629,11 @@ public class OPFChecker30 extends OPFChecker
   public static boolean isCoreMediaType(String type)
   {
     return type != null
-        && (isBlessedAudioType(type) || isBlessedVideoType(type) || isBlessedFontType(type)
+        && (isBlessedAudioType(type)
+            || isBlessedFontType(type)
             || isBlessedItemType(type, EPUBVersion.VERSION_3)
-            || isBlessedImageType(type, EPUBVersion.VERSION_3) || isBlessedScriptType(type)
+            || isBlessedImageType(type, EPUBVersion.VERSION_3)
+            || isBlessedScriptType(type)
             || isBlessedStyleType(type)
             || type.equals("application/pls+xml") || type.equals("application/smil+xml")
             || type.equals("image/svg+xml"));

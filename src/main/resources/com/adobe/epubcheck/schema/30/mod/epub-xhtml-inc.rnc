@@ -25,6 +25,11 @@ include "./html5/common.rnc" {
 		HTMLonly = notAllowed
 	# HTML 4 compat #
 		v5only = empty
+	# Report non-empty URIs as a schema error, since:
+	# - validator.nu checks this outside the schema
+	# - the default `xsd:anyURI` datatype allows empty URIs.
+	# See also e3d3afed0852a701970c893874369f32bd10fa51
+		common.data.uri.non-empty = datatype.string.nonempty
 }
 
 # #####################################################################
@@ -100,6 +105,11 @@ include "./html5/aria.rnc"
 include "./html5/microdata.rnc"
 include "./html5/web-components.rnc"
 include "./html5/rdfa.rnc"
+
+# ITS attributes
+
+include "./its2/its20-html5.rnc"
+common.attrs &= its-html-attributes
 
 # More tweaks for W3C-allowed features
 table.attrs &= attribute border { "" | "1" }?

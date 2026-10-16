@@ -239,9 +239,16 @@ public class OPFHandler30 extends OPFHandler
       }
       else if (name.equals("collection"))
       {
+        if (collectionBuilders.isEmpty()) {
+          report.message(MessageId.OBS_001,location(), "element", "\"collection\"");
+        }
         collectionBuilders.addFirst(
             ResourceCollection.builder().roles(processCollectionRole(e.getAttribute("role"))));
         linkedResourcesBuilders.addFirst(LinkedResources.builder());
+      }
+      else if (name.equals("guide"))
+      {
+        report.message(MessageId.OBS_001, location(), "element", "OPF 2 \"guide\"");
       }
     }
   }
@@ -484,13 +491,14 @@ public class OPFHandler30 extends OPFHandler
     Set<Property> properties = VocabUtil.parsePropertyList(property, itemrefVocabs, context,
         location());
     builder.properties(properties);
-    if (properties.contains(
-        RenditionVocabs.ITEMREF_VOCAB.get(RenditionVocabs.ITEMREF_PROPERTIES.LAYOUT_PRE_PAGINATED))
-        || !properties.contains(
-            RenditionVocabs.ITEMREF_VOCAB.get(RenditionVocabs.ITEMREF_PROPERTIES.LAYOUT_REFLOWABLE))
-            && getMetadata().containsPrimary(
-                RenditionVocabs.META_VOCAB.get(RenditionVocabs.META_PROPERTIES.LAYOUT),
-                "pre-paginated"))
+    if (getMetadata().containsPrimary(
+        RenditionVocabs.META_VOCAB.get(RenditionVocabs.META_PROPERTIES.LAYOUT), "roll")
+        || getMetadata().containsPrimary(
+            RenditionVocabs.META_VOCAB.get(RenditionVocabs.META_PROPERTIES.LAYOUT), "pre-paginated")
+            && !properties.contains(RenditionVocabs.ITEMREF_VOCAB
+                .get(RenditionVocabs.ITEMREF_PROPERTIES.LAYOUT_REFLOWABLE))
+        || properties.contains(RenditionVocabs.ITEMREF_VOCAB
+            .get(RenditionVocabs.ITEMREF_PROPERTIES.LAYOUT_PRE_PAGINATED)))
     {
       builder.fixedLayout();
     }
@@ -551,6 +559,14 @@ public class OPFHandler30 extends OPFHandler
   private void processMeta()
   {
     XMLElement e = currentElement();
+
+    // check OPF 2 meta element
+    if (e.getAttribute("name") != null)
+    {
+      report.message(MessageId.OBS_001, location(), "element", "OPF 2 \"meta\"");
+      return;
+    }
+
     // get the property
     Optional<Property> prop = VocabUtil.parseProperty(e.getAttribute("property"), metaVocabs,
         context, location());
@@ -653,6 +669,10 @@ public class OPFHandler30 extends OPFHandler
         RenditionVocabs.META_VOCAB.get(RenditionVocabs.META_PROPERTIES.LAYOUT), "pre-paginated"))
     {
       report.info(null, FeatureEnum.RENDITION_LAYOUT, "pre-paginated");
+      report.info(null, FeatureEnum.HAS_FIXED_LAYOUT, "true");
+    } else if (getMetadata().containsPrimary(
+        RenditionVocabs.META_VOCAB.get(RenditionVocabs.META_PROPERTIES.LAYOUT), "roll")) {
+      report.info(null, FeatureEnum.RENDITION_LAYOUT, "roll");
       report.info(null, FeatureEnum.HAS_FIXED_LAYOUT, "true");
     }
     // Report publication rendition orientation (if set)

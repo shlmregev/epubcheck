@@ -1,7 +1,13 @@
 package com.adobe.epubcheck.vocab;
 
-import com.adobe.epubcheck.opf.ValidationContext;
+import static com.adobe.epubcheck.vocab.PropertyStatus.ALLOWED;
+import static com.adobe.epubcheck.vocab.PropertyStatus.DEPRECATED;
+import static com.adobe.epubcheck.vocab.PropertyStatus.OUTDATED;
+
+import java.util.Set;
+
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 
 public final class RenditionVocabs
 {
@@ -11,13 +17,13 @@ public final class RenditionVocabs
   public static final EnumVocab<META_PROPERTIES> META_VOCAB = new EnumVocab<META_PROPERTIES>(
       META_PROPERTIES.class, URI, PREFIX);
 
-  public enum META_PROPERTIES implements PropertyStatus
+  public enum META_PROPERTIES implements PropertyStatus.Holder
   {
     LAYOUT,
-    ORIENTATION,
-    SPREAD,
+    ORIENTATION(OUTDATED),
+    SPREAD(OUTDATED),
     VIEWPORT(DEPRECATED),
-    FLOW;
+    FLOW(OUTDATED);
 
     private final PropertyStatus status;
 
@@ -32,41 +38,42 @@ public final class RenditionVocabs
     }
 
     @Override
-    public boolean isAllowed(ValidationContext context)
+    public PropertyStatus getStatus()
     {
-      return status.isAllowed(context);
-    }
-
-    @Override
-    public boolean isDeprecated()
-    {
-      return status.isDeprecated();
+      return status;
     }
   }
 
   public static final EnumVocab<ITEMREF_PROPERTIES> ITEMREF_VOCAB = new EnumVocab<ITEMREF_PROPERTIES>(
-      ITEMREF_PROPERTIES.class, URI);
+      ITEMREF_PROPERTIES.class, URI, PREFIX);
 
-  public enum ITEMREF_PROPERTIES implements PropertyStatus
+  public static Set<Property> SPREAD_PROPERTIES = ImmutableSet.of(
+      ITEMREF_VOCAB.get(ITEMREF_PROPERTIES.PAGE_SPREAD_CENTER),
+      ITEMREF_VOCAB.get(ITEMREF_PROPERTIES.PAGE_SPREAD_LEFT),
+      ITEMREF_VOCAB.get(ITEMREF_PROPERTIES.PAGE_SPREAD_RIGHT),
+      PackageVocabs.ITEMREF_VOCAB.get(PackageVocabs.ITEMREF_PROPERTIES.PAGE_SPREAD_LEFT),
+      PackageVocabs.ITEMREF_VOCAB.get(PackageVocabs.ITEMREF_PROPERTIES.PAGE_SPREAD_RIGHT));
+
+  public enum ITEMREF_PROPERTIES implements PropertyStatus.Holder
   {
     LAYOUT_PRE_PAGINATED,
     LAYOUT_REFLOWABLE,
-    ORIENTATION_AUTO,
-    ORIENTATION_LANDSCAPE,
-    ORIENTATION_PORTRAIT,
-    SPREAD_AUTO,
-    SPREAD_BOTH,
-    SPREAD_LANDSCAPE,
-    SPREAD_NONE,
+    ORIENTATION_AUTO(OUTDATED),
+    ORIENTATION_LANDSCAPE(OUTDATED),
+    ORIENTATION_PORTRAIT(OUTDATED),
+    SPREAD_AUTO(OUTDATED),
+    SPREAD_BOTH(OUTDATED),
+    SPREAD_LANDSCAPE(OUTDATED),
+    SPREAD_NONE(OUTDATED),
     SPREAD_PORTRAIT(DEPRECATED),
     PAGE_SPREAD_CENTER,
     PAGE_SPREAD_LEFT,
     PAGE_SPREAD_RIGHT,
-    FLOW_PAGINATED,
-    FLOW_SCROLLED_CONTINUOUS,
-    FLOW_SCROLLED_DOC,
-    FLOW_AUTO,
-    ALIGN_X_CENTER;
+    FLOW_PAGINATED(OUTDATED),
+    FLOW_SCROLLED_CONTINUOUS(OUTDATED),
+    FLOW_SCROLLED_DOC(OUTDATED),
+    FLOW_AUTO(OUTDATED),
+    ALIGN_X_CENTER(DEPRECATED);
 
     private final PropertyStatus status;
 
@@ -81,15 +88,9 @@ public final class RenditionVocabs
     }
 
     @Override
-    public boolean isAllowed(ValidationContext context)
+    public PropertyStatus getStatus()
     {
-      return status.isAllowed(context);
-    }
-
-    @Override
-    public boolean isDeprecated()
-    {
-      return status.isDeprecated();
+      return status;
     }
   }
 

@@ -1,8 +1,8 @@
 Feature: EPUB 3 — Open Container Format
 
 
-  Checks conformance to the "Open Container Format (OCF)" section of the EPUB 3.3 specification:
-    https://www.w3.org/TR/epub-33/#sec-ocf
+  Checks conformance to the "Open Container Format (OCF)" section of the EPUB 3.4 specification:
+    https://www.w3.org/TR/epub-34/#sec-ocf
 
 
   Background: 
@@ -10,9 +10,9 @@ Feature: EPUB 3 — Open Container Format
     And EPUBCheck with default settings
 
 
-	## 4.1 OCF Abstract Container
+	## 4.2 OCF Abstract Container
 
-  ###  4.1.2 File and Directory Structure
+  ###  4.2.2 File and Directory Structure
 
   @spec @xref:sec-container-file-and-dir-structure
   Scenario: Report publication resources found in META-INF
@@ -21,7 +21,7 @@ Feature: EPUB 3 — Open Container Format
     And no other errors or warnings are reported
 
 
-  ###  4.1.3 File paths and file names
+  ###  4.2.3 File paths and file names
 
   @spec @xref:sec-container-filenames
   Scenario: Verify a file name containing a `+` character is allowed (issue 188)
@@ -110,7 +110,7 @@ Feature: EPUB 3 — Open Container Format
     Then warning PKG-010 is reported
     And no other errors or warnings are reported
     
-  ###  4.1.5 URLs in the OCF abstract container
+  ###  4.2.5 URLs in the OCF abstract container
 
   #### Valid container URLs
 
@@ -161,32 +161,120 @@ Feature: EPUB 3 — Open Container Format
 
   #### resource existence checks:
 
-  Scenario: Allow an absolute `cite` URL
-    When checking EPUB 'url-xhtml-cite-absolute-valid'
-    Then no errors or warnings are reported
+  Rule: a relative URL MUST be equal to the URL of file in the container
 
-  @spec @xref:sec-container-iri
-  Scenario: Report a relative `cite` URL when the resource is not found in the manifest
-    When checking EPUB 'url-xhtml-cite-missing-resource-error'
-    Then error RSC-007 is reported 4 times
-    And no other errors or warnings are reported
+    #! in XHTML
 
-  @spec @xref:sec-container-iri
-  Scenario: Report a reference from an XHTML `iframe` not declared in the manifest
-    When checking EPUB 'url-xhtml-iframe-missing-resource-error'
-    Then error RSC-007 is reported
-    And no other errors or warnings are reported
+    @spec @xref:sec-container-iri
+    Example: Report a relative `cite` URL when the resource is not found in the manifest
+      When checking EPUB 'url-missing-resource-xhtml-cite-error'
+      Then error RSC-007 is reported 4 times
+      And no other errors or warnings are reported
 
-  @spec @xref:sec-container-iri
-  Scenario: Report a reference from an XHTML `track` not declared in the manifest
-    When checking EPUB 'url-xhtml-track-missing-resource-error'
-    Then error RSC-007 is reported
-    And no other errors or warnings are reported
+    @spec @xref:sec-container-iri
+    Example: Report a reference from an XHTML `iframe` not declared in the manifest
+      When checking EPUB 'url-missing-resource-xhtml-iframe-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
 
+    @spec @xref:sec-container-iri
+    Example: Report a reference from an XHTML doc to a resource not declared in the manifest
+      When checking EPUB 'url-missing-resource-xhtml-img-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
 
-  ###  4.1.6 META-INF Directory
+    @spec @xref:sec-container-iri
+    Example: Report a hyperlink to a resource missing from the publication
+      When checking EPUB 'url-missing-resource-xhtml-hyperlink-error'
+      Then error RSC-007 is reported
+      And no errors or warnings are reported
 
-  ####  4.1.6.3.1 Container File (container.xml)
+    @spec @xref:sec-container-iri
+    Example: Report a MathML formula with an alternative image that cannot be found
+      When checking EPUB 'url-missing-resource-xhtml-mathml-altimg-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
+
+    @spec @xref:sec-container-iri
+    Example: Report a reference from an XHTML `track` not declared in the manifest
+      When checking EPUB 'url-missing-resource-xhtml-track-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
+
+    #! in SVG
+
+    @spec @xref:sec-container-iri
+    Example: an SVG hyperlink 'href' referencing a missing resource is reported
+      When checking EPUB 'url-missing-resource-svg-a-href-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
+
+    @spec @xref:sec-container-iri
+    Example: an SVG hyperlink 'xlink:href' referencing a missing resource is reported
+      When checking EPUB 'url-missing-resource-svg-a-xlink-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
+
+    Example: an SVG hyperlink with 'xlink:href' and 'href' referencing the same missing resource is reported once
+      When checking EPUB 'url-missing-resource-svg-a-xlink-same-as-href-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
+
+    Example: an SVG hyperlink 'xlink:href' referencing a missing resource but 'href' referencing and existing resource is reported
+      When checking EPUB 'url-missing-resource-svg-a-xlink-with-href-ok-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
+
+    @spec @xref:sec-container-iri
+    Example: an SVG image 'href' referencing a missing resource is reported
+      When checking EPUB 'url-missing-resource-svg-image-href-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
+
+    @spec @xref:sec-container-iri
+    Example: an SVG image 'xlink:href' referencing a missing resource is reported
+      When checking EPUB 'url-missing-resource-svg-image-xlink-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
+
+    Example: an SVG image with 'xlink:href' and 'href' referencing the same missing resource is reported once
+      When checking EPUB 'url-missing-resource-svg-image-xlink-same-as-href-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
+
+    Example: an SVG image 'xlink:href' referencing a missing resource but 'href' referencing and existing resource is reported
+      When checking EPUB 'url-missing-resource-svg-image-xlink-with-href-ok-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
+
+#!FIXME xlink:href ignored if href is present
+
+    #! in CSS
+
+    @spec @xref:sec-container-iri
+    Example: Report a CSS `url` that is not declared in the package document or present in the container
+      When checking EPUB 'url-missing-resource-css-error'
+      Then error RSC-007 is reported
+      And no other errors or warnings are reported
+
+    @spec @xref:sec-container-iri
+    Example: Report a CSS `url` error even when preceded by a syntax error
+      When checking EPUB 'url-missing-resource-css-preceded-by-invalid-syntax-error'
+      Then error CSS-008 is reported (syntax error)
+      And  error RSC-007 is reported (resource not found)
+      Then no errors or warnings are reported
+
+    #! in Package Document
+
+    @spec @xref:sec-container-iri
+    Example: Report a package metadata link to a missing resource
+      When checking EPUB 'url-missing-resource-package-link-warning'
+      Then warning RSC-007w is reported
+      And no other errors or warnings are reported
+
+  ###  4.2.6 META-INF Directory
+
+  ####  4.2.6.3.1 Container File (container.xml)
 
   @spec @xref:sec-container-metainf-container.xml
   Scenario: Report an unknown element in the `container.xml` file
@@ -208,7 +296,7 @@ Feature: EPUB 3 — Open Container Format
     And error PKG-006 is reported (missing mimetype)
     Then no errors or warnings are reported
 
-  ### 4.1.6.3.1.3 The rootfile element
+  ##### 4.2.6.3.1.3 The rootfile element
 
   @spec @xref:sec-container.xml-rootfile-elem
   Scenario: Report a missing OPF document
@@ -217,9 +305,9 @@ Feature: EPUB 3 — Open Container Format
     And no other errors or warnings are reported
 
 
-  ####  Encryption File (encryption.xml)
+  #### 4.2.6.3.2 Encryption File (encryption.xml)
   
-  #### 4.1.6.3.2.1 The encryption element
+  ##### 4.2.6.3.2.1 The encryption element
 
   @spec @xref:sec-encryption.xml-encryption
   Scenario: Report an `encryption.xml` file with invalid markup
@@ -244,7 +332,7 @@ Feature: EPUB 3 — Open Container Format
     And the message contains 'Duplicate'
     And no other errors or warnings are reported
 
-  #### 4.1.6.3.2.2 Order of compression and encryption
+  ##### 4.2.6.3.2.2 Order of compression and encryption
   
   @spec @xref:sec-enc-compression
   Scenario: Report an `encryption.xml` file with invalid compression metadata
@@ -254,9 +342,9 @@ Feature: EPUB 3 — Open Container Format
       | RSC-005 | value of attribute "OriginalLength" is invalid |
 
 
-  #### 4.1.6.3.6 Digital Signatures File (signatures.xml)
+  #### 4.2.6.3.6 Digital Signatures File (signatures.xml)
   
-  ##### 4.1.6.3.6.1 The signatures element
+  ##### 4.2.6.3.6.1 The signatures element
 
   @spec @xref:sec-signatures.xml-signatures
   Scenario: Report a `signature.xml` file with invald markup
@@ -267,11 +355,11 @@ Feature: EPUB 3 — Open Container Format
 
   
   
-  ## 4.2 OCF ZIP container  
+  ## 4.3 OCF ZIP container
   
-  ### 4.2.2 ZIP file requirements
+  ### 4.3.2 ZIP file requirements
 
-  @spec @xref:sec-epub-conf @xref:sec-zip-container-zipreqs
+  @spec @xref:sec-zip-container-zipreqs
   Scenario: Verify a minimal packaged EPUB
     When checking EPUB 'ocf-zip-valid.epub'
     Then no errors or warnings are reported
@@ -327,18 +415,13 @@ Feature: EPUB 3 — Open Container Format
     Then no errors or warnings are reported
 
 
-  ### 4.2.3 OCF ZIP container media type idenfication
+  ### 4.3.3 OCF ZIP container media type idenfication
 
   @spec @xref:sec-zip-container-mime
   Scenario: Report a mimetype file with an incorrect value
     When checking EPUB 'ocf-mimetype-file-incorrect-value-error'
     Then error PKG-007 is reported
-    And no other errors or warnings are reported
-
-  @spec @xref:sec-zip-container-mime
-  Scenario: Report a mimetype file with leading spaces
-    When checking EPUB 'ocf-mimetype-file-leading-spaces-error'
-    Then error PKG-007 is reported
+    And the message is 'The content of the mimetype file must be the string "application/epub+zip"'
     And no other errors or warnings are reported
 
   @spec @xref:sec-zip-container-mime
@@ -351,6 +434,13 @@ Feature: EPUB 3 — Open Container Format
   Scenario: Report a missing mimetype file
     When checking EPUB 'ocf-mimetype-file-missing-error.epub'
     Then error PKG-006 is reported
+    And no other errors or warnings are reported
+
+  @spec @xref:sec-zip-container-mime
+  Scenario: Report a mimetype file with leading spaces
+    When checking EPUB 'ocf-mimetype-file-leading-spaces-error'
+    Then error PKG-007 is reported
+    And the message contains 'with no whitespace'
     And no other errors or warnings are reported
 
   @spec @xref:sec-zip-container-mime
@@ -370,30 +460,3 @@ Feature: EPUB 3 — Open Container Format
     When checking EPUB 'ocf-zip-mimetype-entry-extra-field-error.epub'
     Then error PKG-005 is reported
     And no other errors or warnings are reported
-
-
-  ## 4.3 Font obfuscation
-
-  ### 4.3.5 Specifying obfuscated fonts
-  
-  @spec @xref:obfus-specifying
-  Scenario: Verify a publication with obfuscated font
-    When checking EPUB 'ocf-obfuscation-valid'
-    Then no errors or warnings are reported
-
-  @spec @xref:obfus-specifying
-  Scenario: Verify duplicating encryption declaration is allowed
-    When checking EPUB 'ocf-obfuscation-duplicate-valid'
-    Then no errors or warnings are reported
-
-  @spec @xref:obfus-specifying
-  Scenario: Report an obfuscated font that is not a Core Media Type
-    When checking EPUB 'ocf-obfuscation-not-cmt-error'
-    Then error PKG-026 is reported
-    And no errors or warnings are reported
-
-  @spec @xref:obfus-specifying
-  Scenario: Report an obfuscated font that is not a font
-    When checking EPUB 'ocf-obfuscation-not-font-error'
-    Then error PKG-026 is reported
-    And no errors or warnings are reported

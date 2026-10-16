@@ -61,7 +61,9 @@
 		&	body.attrs.onoffline?
 		&	body.attrs.ononline?
 		&	body.attrs.onpagehide?
+		&	body.attrs.onpagereveal?
 		&	body.attrs.onpageshow?
+		&	body.attrs.onpageswap?
 		&	body.attrs.onpopstate?
 		&	body.attrs.onrejectionhandled?
 		&	body.attrs.onstorage?
@@ -91,6 +93,10 @@
 		attribute ononline { common.data.functionbody }
 	body.attrs.onpagehide =
 		attribute onpagehide { common.data.functionbody }
+	body.attrs.onpagereveal =
+		attribute onpagereveal { common.data.functionbody }
+	body.attrs.onpageswap =
+		attribute onpageswap { common.data.functionbody }
 	body.attrs.onpageshow =
 		attribute onpageshow { common.data.functionbody }
 	body.attrs.onpopstate =
@@ -164,10 +170,10 @@
 		&	link.attrs.workertype?
 		&	link.attrs.imagesrcset?
 		&	link.attrs.imagesizes?
-		& common.attrs.fetchpriority?
+		&	common.attrs.fetchpriority?
 		#	link.attrs.title included in common.attrs
 		&	embedded.content.attrs.crossorigin?
-		& common.attrs.blocking?
+		&	common.attrs.blocking?
 		&	common.attrs.aria.role.link?
 		)
 		link.attrs.href =
@@ -176,30 +182,22 @@
 			}
 		link.attrs.rel =
 			attribute rel {
-				string
+				datatype.string
 			}
 		link.attrs.as =
 			attribute as {
-				string ""
-			|	string "audio"
-			|	string "audioworklet"
-			|	string "document"
-			|	string "embed"
+				string "audioworklet"
 			|	string "fetch"
 			|	string "font"
 			|	string "image"
-			|	string "manifest"
-			|	string "object"
+			|	string "json"
 			|	string "paintworklet"
-			|	string "report"
 			|	string "script"
 			|	string "serviceworker"
 			|	string "sharedworker"
 			|	string "style"
 			|	string "track"
-			|	string "video"
 			|	string "worker"
-			|	string "xslt"
 			}
 		link.attrs.integrity =
 			attribute integrity {
@@ -207,7 +205,7 @@
 			}
 		link.attrs.sizes =
 			attribute sizes {
-				 "any" | common.data.sizes
+				"any" | common.data.sizes
 			}
 		link.attrs.color =
 			attribute color {
@@ -253,15 +251,10 @@
 		element style { style.inner & style.attrs }
 	style.attrs =
 		(	common.attrs
-		&	style.attrs.type?
 		&	style.attrs.media?
-		& common.attrs.blocking?
+		&	common.attrs.blocking?
 		#	style.attrs.title included in common.attrs
 		)
-		style.attrs.type =
-			attribute type {
-				text
-			}
 		style.attrs.media =
 			attribute media {
 				common.data.mediaquery
@@ -315,7 +308,7 @@
 		)
 		meta.http-equiv.attrs.http-equiv.refresh =
 			attribute http-equiv {
-				 "refresh"
+				"refresh"
 			}
 		meta.http-equiv.attrs.content.refresh =
 			attribute content { 
@@ -339,7 +332,7 @@
 		)
 		meta.http-equiv.attrs.http-equiv.default-style =
 			attribute http-equiv {
-				 "default-style"
+				"default-style"
 			}
 		meta.http-equiv.attrs.content.default-style =
 			attribute content {
@@ -364,7 +357,7 @@
 		)
 		meta.http-equiv.attrs.http-equiv.content-security-policy =
 			attribute http-equiv {
-				 "content-security-policy"
+				"content-security-policy"
 			}
 		meta.http-equiv.attrs.content.content-security-policy =
 			attribute content {
@@ -386,7 +379,7 @@
 		)
 		meta.http-equiv.attrs.http-equiv.x-ua-compatible =
 			attribute http-equiv {
-				 "x-ua-compatible"
+				"x-ua-compatible"
 			}
 		meta.http-equiv.attrs.content.x-ua-compatible =
 			attribute content {
@@ -428,7 +421,7 @@
 		)
 		meta.http-equiv.attrs.http-equiv.content-type =
 			attribute http-equiv {
-				 "content-type"
+				"content-type"
 			}
 		meta.http-equiv.attrs.content.content-type =
 			attribute content {

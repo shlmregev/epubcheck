@@ -1,8 +1,8 @@
- Feature: EPUB 3 — Publication Resources
+Feature: EPUB 3 — Publication Resources
 
-  
-  Checks conformance to the "Publication resources" section of the EPUB 3.3 specification:
-    https://www.w3.org/TR/epub-33/#sec-publication-resources
+
+  Checks conformance to the "Publication resources" section of the EPUB 3.4 specification:
+    https://www.w3.org/TR/epub-34/#sec-publication-resources
 
 
   Background: 
@@ -11,7 +11,7 @@
 
 
   ## 3.2 Core Media Types
-  
+
   @spec @xref:sec-core-media-types
   Scenario: items with Core Media Types do not require fallbacks
       The test document contains one item of each supported core media types
@@ -26,38 +26,76 @@
     When the reporting level is set to USAGE
     And checking EPUB 'resources-core-media-types-not-preferred-valid.opf'
     Then Usage OPF-090 is reported 7 times
-    And no errors or warnings are reported   
-    
+    And no errors or warnings are reported
 
+  @spec @xref:sec-core-media-types
   Scenario: Verify MP3 audio is allowed
     When checking EPUB 'resources-cmt-audio-mp3-valid'
     Then no errors or warnings are reported
 
+  @spec @xref:sec-core-media-types
   Scenario: Verify AAC/MP4 audio is allowed
     When checking EPUB 'resources-cmt-audio-mp4-valid'
     Then no errors or warnings are reported
 
-  Scenario: Verify OPUS audio is allowed
+  @spec @xref:sec-core-media-types
+  Scenario: Verify AAC/MP4 audio with explicit AAC codec is allowed
+    When checking EPUB 'resources-cmt-audio-mp4-aac-valid'
+    Then no errors or warnings are reported
+
+  @spec @xref:sec-core-media-types
+  Scenario: Verify AAC/MP4 audio with explicit OPUS codec  is allowed
+    When checking EPUB 'resources-cmt-audio-mp4-opus-valid'
+    Then no errors or warnings are reported
+
+  @spec @xref:sec-core-media-types
+  Scenario: Report AAC/MP4 audio with a non-supported declared codec
+    When checking EPUB 'resources-cmt-audio-mp4-other-error'
+    Then error RSC-032 is reported
+    Then no errors or warnings are reported
+
+  @spec @xref:sec-core-media-types
+  Scenario: Verify OPUS audio in OGG container is allowed
     When checking EPUB 'resources-cmt-audio-opus-valid'
     Then no errors or warnings are reported
-  
+
+  @spec @xref:sec-core-media-types
+  Scenario: Report OPUS audio with the media type 'audio/opus'
+    When checking EPUB 'resources-cmt-audio-opus-mimetype-error'
+    Then error RSC-032 is reported
+    And no other errors or warnings are reported
+
 
   ####  Image core media types
 
+  @spec @xref:sec-core-media-types
   Scenario: Verify GIF images are allowed
     When checking EPUB 'resources-cmt-image-gif-valid'
     Then no errors or warnings are reported
 
+  @spec @xref:sec-core-media-types
   Scenario: Verify JPEG images are allowed
     When checking EPUB 'resources-cmt-image-jpg-valid'
     Then no errors or warnings are reported
 
+  @spec @xref:sec-core-media-types
   Scenario: Verify PNG images are allowed
     When checking EPUB 'resources-cmt-image-png-valid'
     Then no errors or warnings are reported
 
+  @spec @xref:sec-core-media-types
   Scenario: Verify WebP images are allowed
     When checking EPUB 'resources-cmt-image-webp-valid'
+    Then no errors or warnings are reported
+
+  @spec @xref:sec-core-media-types
+  Scenario: Verify AVIF images are allowed
+    When checking EPUB 'resources-cmt-image-avif-valid'
+    Then no errors or warnings are reported
+
+  @spec @xref:sec-core-media-types
+  Scenario: Verify JPEG XL images are allowed
+    When checking EPUB 'resources-cmt-image-jxl-valid'
     Then no errors or warnings are reported
 
   Scenario: Verify that JPEG file is not corrupt (issue 567)
@@ -83,6 +121,7 @@
 
   ####  Font core media types
 
+  @spec @xref:sec-core-media-types
   Scenario: Verify TrueType fonts core media types
     Given the reporting level is set to USAGE
     When checking EPUB 'resources-cmt-font-truetype-valid'
@@ -90,21 +129,18 @@
     And usage OPF-090 is reported 2 times
     But no errors or warnings are reported
 
+  @spec @xref:sec-core-media-types
   Scenario: Verify Open Type fonts are allowed
     When checking EPUB 'resources-cmt-font-opentype-valid'
     Then no errors or warnings are reported
 
+  @spec @xref:sec-core-media-types
   Scenario: Verify SVG fonts are allowed
     When checking EPUB 'resources-cmt-font-svg-valid'
     Then no errors or warnings are reported
 
   ## 3.3 Foreign resources
-    
-  @spec @xref:sec-foreign-resources
-  Scenario: Allow a foreign resource in HTML `audio` with a manifest fallback
-    When checking EPUB 'foreign-xhtml-audio-manifest-fallback-valid'
-    And no other errors or warnings are reported
-    
+
   @spec @xref:sec-foreign-resources
   Scenario: Report a foreign resource in HTML `audio` with no fallbacks
     When checking EPUB 'foreign-xhtml-audio-no-fallback-error'
@@ -118,11 +154,6 @@
     And no errors or warnings are reported
 
   @spec @xref:sec-foreign-resources
-  Scenario: Allow a foreign resource in HTML `embed` with a manifest fallback
-    When checking EPUB 'foreign-xhtml-embed-fallback-valid'
-    Then no errors or warnings are reported
-
-  @spec @xref:sec-foreign-resources
   Scenario: Report a foreign resource in HTML `embed` with no fallback
     When checking EPUB 'foreign-xhtml-embed-no-fallback-error'
     Then error RSC-032 is reported
@@ -133,11 +164,6 @@
     When checking EPUB 'foreign-xhtml-input-image-no-fallback-error'
     Then error RSC-032 is reported
     And no other errors or warnings are reported
-
-  @spec @xref:sec-foreign-resources
-  Scenario: Allow a foreign resource in HTML video `poster` with a manifest fallback
-    When checking EPUB 'foreign-xhtml-video-poster-fallback-valid'
-    And no errors or warnings are reported
 
   @spec @xref:sec-foreign-resources
   Scenario: Report a foreign resource in HTML video `poster` with no fallack
@@ -180,6 +206,53 @@
     When checking EPUB 'foreign-exempt-xhtml-link-xpgt-manifest-fallback-valid'
     Then no errors or warnings are reported
 
+  ### Scripts
+
+  @spec @xref:sec-exempt-resources
+  Scenario: a classic script resource with no type attribute and a foreign JavaScript MIME type is exempt
+    Given the reporting level is set to USAGE
+    When checking EPUB 'foreign-exempt-xhtml-script-no-type-javascript-valid'
+    Then no errors or warnings are reported
+    But usage RSC-035 is reported (legacy javascript type)
+
+  @spec @xref:sec-exempt-resources
+  Scenario: a classic script resource with no type attribute and that is not JavaScript is reported
+    When checking EPUB 'foreign-exempt-xhtml-script-no-type-not-javascript-error'
+    Then error RSC-034 is reported
+    And no other errors or warnings are reported
+
+  @spec @xref:sec-exempt-resources
+  Scenario: a classic script resource with a type attribute and a foreign JavaScript MIME type is exempt
+    Given the reporting level is set to USAGE
+    When checking EPUB 'foreign-exempt-xhtml-script-type-javascript-valid'
+    Then no errors or warnings are reported
+    But usage RSC-035 is reported (legacy javascript type)
+
+  @spec @xref:sec-exempt-resources
+  Scenario: a classic script resource with a type attribute and that is not JavaScript is reported
+    When checking EPUB 'foreign-exempt-xhtml-script-type-not-javascript-error'
+    Then error RSC-005 is reported (HTML schema type attribute check)
+    Then error RSC-034 is reported (publication resrouce media type check)
+    And no other errors or warnings are reported
+
+  @spec @xref:sec-exempt-resources
+  Scenario: a module script resource with a foreign JavaScript MIME type is exempt
+    Given the reporting level is set to USAGE
+    When checking EPUB 'foreign-exempt-xhtml-script-module-valid'
+    Then no errors or warnings are reported
+    But usage RSC-035 is reported (legacy javascript type)
+
+  @spec @xref:sec-exempt-resources
+  Scenario: a module script resource that is not JavaScript is reported
+    When checking EPUB 'foreign-exempt-xhtml-script-module-not-javascript-error'
+    Then error RSC-034 is reported
+    And no other errors or warnings are reported
+
+  @spec @xref:sec-exempt-resources
+  Scenario: a Wasm module fetched in a script is exempt
+    When checking EPUB 'foreign-exempt-xhtml-script-using-wasm-valid'
+    And no errors or warnings are reported
+
   ### Tracks
 
   @spec @xref:sec-exempt-resources
@@ -189,15 +262,26 @@
 
   ### Video
 
-  @spec @xref:sec-foreign-resources
-  Scenario: Allow foreign video in a HTML `video` element without a fallback
+  @spec @xref:sec-exempt-resources
+  Scenario: foreign video in an HTML`video` element is exempt
     When checking EPUB 'foreign-exempt-xhtml-video-valid'
     Then no errors or warnings are reported
 
-  @spec @xref:sec-foreign-resources
-  Scenario: Allow foreign video in a HTML `img` element without a fallback
-    When checking EPUB 'foreign-exempt-xhtml-video-in-img-valid'
+  @spec @xref:sec-exempt-resources
+  Scenario: foreign video in an HTML `source` child of a `video` element is exempt
+    When checking EPUB 'foreign-exempt-xhtml-video-source-valid'
     Then no errors or warnings are reported
+
+  @spec @xref:sec-exempt-resources
+  Scenario: foreign video with a media type not starting with 'video/' is exempt
+    When checking EPUB 'foreign-exempt-xhtml-video-mediatype-application-valid'
+    Then no errors or warnings are reported
+
+  @spec @xref:sec-exempt-resources
+  Scenario: foreign video referenced from an HTML `img` element is not exempt
+    When checking EPUB 'foreign-exempt-xhtml-video-in-img-error'
+    Then error RSC-032 is reported
+    And no other errors or warnings are reported
 
 	#### Other
 
@@ -258,15 +342,15 @@
 
 
   ### 3.5.2 Intrinsic fallbacks
-  
-  #### 3.5.2.2 HTML `audio` fallbacks
-  
+
+  #### 3.5.2.1 HTML `audio` and `video` fallbacks
+
   @spec @xref:sec-fallbacks-audio
   Scenario: Report foreign HTML `audio` without fallbacks even with inner flow content
     When checking EPUB 'foreign-xhtml-audio-no-fallback-with-flow-content-error'
     Then error RSC-032 is reported
     And no other errors or warnings are reported
-    
+
   @spec @xref:sec-fallbacks-audio
   Scenario: Allow foreign HTML `audio` with a `source` fallback
     When checking EPUB 'foreign-xhtml-audio-source-fallback-valid'
@@ -302,6 +386,12 @@
     And no other errors or warnings are reported
 
   @spec @xref:sec-fallbacks-img
+  Scenario: Report an `img` element with a video resource
+    When checking EPUB 'foreign-xhtml-img-video-error'
+    Then error RSC-032 is reported
+    Then no errors or warnings are reported
+
+  @spec @xref:sec-fallbacks-img
   Scenario: Report a `picture` element with a foreign resource in its `img src` fallback  
     When checking EPUB 'foreign-xhtml-picture-img-src-error'
     Then error MED-003 is reported
@@ -330,6 +420,11 @@
   Scenario: Verify a script data block does not require a fallback
     When checking EPUB 'foreign-xhtml-script-datablock-valid'
     Then no errors or warnings are reported
+
+  @spec @xref:html-script-element
+  Scenario: Verify an "importmap" JSON script content
+    When checking EPUB 'foreign-xhtml-script-importmap-block-valid'
+    And no errors or warnings are reported
 
 
   ## 3.6 Resources Locations
@@ -498,8 +593,12 @@
     Then warning RSC-031 is reported 3 times
     And no other errors or warnings are reported
 
-  Scenario: Allow `mailto` URLs, do not process them as resources
-    When checking document 'mailto-url-valid'
+  Scenario: do not process a `mailto` URL as a resource
+    When checking document 'url-absolute-not-resource-mailto-valid'
+    Then no errors or warnings are reported
+
+  Scenario: do not process an absolute `cite` URL as a resource
+    When checking EPUB 'url-absolute-not-resource-xhtml-cite-valid'
     Then no errors or warnings are reported
 
   ## 3.7 Data URLs
@@ -670,22 +769,26 @@
   
   ### MIME type mismatch warning
 
-  Scenario: Report an `object` element with a `type` attribute not matching the publication resource type
-    When checking EPUB 'type-mismatch-in-object-warning'
-    Then warning OPF-013 is reported
-    And no other errors or warnings are reported
-
-  Scenario: Report a picture `source` element `type` attribute not matching the publication resource type
-    When checking EPUB 'type-mismatch-in-picture-source-warning'
-    Then warning OPF-013 is reported
-    And no other errors or warnings are reported
+  Scenario: Verify MP3 audio source type may have a `codecs` parameter
+    When checking EPUB 'type-audio-source-mp3-codecs-valid'
+    Then no errors or warnings are reported
 
   Scenario: Report an audio `source` element `type` attribute not matching the publication resource type
-    When checking EPUB 'type-mismatch-in-picture-source-warning'
+    When checking EPUB 'type-audio-source-mismatch-warning'
     Then warning OPF-013 is reported
     And no other errors or warnings are reported
 
   Scenario: Report an `embed` element with a `type` attribute not matching the publication resource type
-    When checking EPUB 'type-mismatch-in-embed-warning'
+    When checking EPUB 'type-embed-mismatch-warning'
+    Then warning OPF-013 is reported
+    And no other errors or warnings are reported
+
+  Scenario: Report an `object` element with a `type` attribute not matching the publication resource type
+    When checking EPUB 'type-object-mismatch-warning'
+    Then warning OPF-013 is reported
+    And no other errors or warnings are reported
+
+  Scenario: Report a picture `source` element `type` attribute not matching the publication resource type
+    When checking EPUB 'type-picture-source-mismatch-warning'
     Then warning OPF-013 is reported
     And no other errors or warnings are reported

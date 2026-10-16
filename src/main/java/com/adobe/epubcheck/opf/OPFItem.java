@@ -24,6 +24,7 @@ package com.adobe.epubcheck.opf;
 
 import java.util.Set;
 
+import org.w3c.epubcheck.util.mime.MIMEType;
 import org.w3c.epubcheck.util.url.URLUtils;
 
 import com.adobe.epubcheck.api.EPUBLocation;
@@ -434,7 +435,7 @@ public class OPFItem
 
     public Builder mimetype(String mimetype)
     {
-      this.mimetype = Optional.fromNullable(mimetype).or("undefined").trim();
+      this.mimetype = MIMEType.normalize(mimetype);
       return this;
     }
 
@@ -513,6 +514,11 @@ public class OPFItem
       this.fxl = true;
       return this;
 
+    }
+
+    public boolean isFixedLayout()
+    {
+      return fxl;
     }
 
     public Builder mediaOverlay(String path)

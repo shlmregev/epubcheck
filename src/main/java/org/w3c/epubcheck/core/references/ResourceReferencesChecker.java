@@ -129,7 +129,6 @@ public class ResourceReferencesChecker
       }
       assert targetResource.isPresent();
 
-      // Check fallbacks
       checkFallbacks(reference, targetResource.get());
 
       // Parse the URL fragment
@@ -259,6 +258,19 @@ public class ResourceReferencesChecker
         throw new CheckAbortException();
       }
       break;
+    case SCRIPT:
+      if (!OPFChecker.isScriptType(targetMimetype))
+      {
+        report.message(MessageId.RSC_034,
+            reference.location.context(container.relativize(reference.url)));
+        throw new CheckAbortException();
+      }
+      else if (!OPFChecker30.isBlessedScriptType(targetMimetype))
+      {
+        report.message(MessageId.RSC_035,
+            reference.location.context(container.relativize(reference.url)), targetMimetype);
+      }
+      break;
     case SEARCH_KEY:
       if ((!fragment.exists() || !"epubcfi".equals(fragment.getScheme()))
           && !targetResource.isInSpine())
@@ -293,12 +305,19 @@ public class ResourceReferencesChecker
 
   private void checkFallbacks(Reference reference, Resource targetResource)
   {
+    // check content manifest fallback (outdated)
+    if (reference.type.isPublicationResourceReference()
+        && targetResource.hasManifestFallback())
+    {
+      report.message(MessageId.OBS_001, reference.location,
+          "content-fallback", container.relativize(reference.targetResource));
+    }
+    // check resource has a core media type fallback
     String targetMimetype = targetResource.getMimeType();
     switch (reference.type)
     {
     case IMAGE:
     case AUDIO:
-    case VIDEO:
     case GENERIC:
       if (!reference.hasIntrinsicFallback && !OPFChecker30.isCoreMediaType(targetMimetype)
           && !targetResource.hasCoreMediaTypeFallback())

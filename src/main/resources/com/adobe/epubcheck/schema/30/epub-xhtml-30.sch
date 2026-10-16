@@ -340,6 +340,33 @@
         </rule>
     </pattern>
 
+    <!-- This is checked by the HTML validator non-schema checks -->
+    <pattern id="script">
+        <rule context="h:script">
+            <report test="@src and @type and not(@type=(
+                'module',
+                'application/ecmascript',
+                'application/javascript',
+                'application/x-ecmascript',
+                'application/x-javascript',
+                'text/ecmascript',
+                'text/javascript',
+                'text/javascript1.0',
+                'text/javascript1.1',
+                'text/javascript1.2',
+                'text/javascript1.3',
+                'text/javascript1.4',
+                'text/javascript1.5',
+                'text/jscript',
+                'text/livescript',
+                'text/x-ecmascript',
+                'text/x-javascript'
+                ))"
+                >A 'script' element must not have an 'src' attribute if it has 'type' attribute
+                whose value is neither a JavaScript MIME Type nor 'module'.</report>
+        </rule>
+    </pattern>
+
     <pattern abstract="true" id="idref-any">
         <rule context="$element[@$idref-attr-name]">
             <assert test="some $elem in $id-set satisfies $elem/@id eq current()/@$idref-attr-name"
@@ -404,6 +431,53 @@
             <report test="tokenize(@role,'\s+')='doc-biblioentry'"
                 >WARNING: The "doc-biblioentry" role is deprecated and should not be used.</report>
         </rule>
+    </pattern>
+
+    <pattern id="aria.role.nameprohibited" abstract="true">
+        <rule context="h:*[@role][tokenize(@role,'\s+')=$role]">
+            <report test="@aria-label|@aria-labelledby"
+                >the '<name path="(@aria-label|@aria-labelledby)[1]"/>' attribute must not be specified
+                 on an element that has a '<value-of select="$role"/>' role.</report>
+        </rule>
+    </pattern>
+
+    <pattern id="aria.role.doc-pagefooter.nameprohibited" is-a="aria.role.nameprohibited">
+        <param name="role" value="'doc-pagefooter'"/>
+    </pattern>
+
+    <pattern id="aria.role.doc-pageheader.nameprohibited" is-a="aria.role.nameprohibited">
+        <param name="role" value="'doc-pageheader'"/>
+    </pattern>
+
+    <pattern id="obsolete.attribute" abstract="true">
+        <rule context="$element[@$attribute]">
+            <assert test="true"
+                >USAGE: the '<name path="@$attribute"/>' attribute on '<name/>' elements is obsolete. <value-of select="$suggestion"/></assert>
+        </rule>
+    </pattern>
+
+    <pattern id="obsolete.img.border" is-a="obsolete.attribute">
+        <param name="element" value="h:img"/>
+        <param name="attribute" value="border"/>
+        <param name="suggestion" value="'CSS should be used instead.'"/>
+    </pattern>
+
+    <pattern id="obsolete.script.charset" is-a="obsolete.attribute">
+        <param name="element" value="h:script"/>
+        <param name="attribute" value="charset"/>
+        <param name="suggestion" value="''"/>
+    </pattern>
+
+    <pattern id="obsolete.style.type" is-a="obsolete.attribute">
+        <param name="element" value="h:style"/>
+        <param name="attribute" value="type"/>
+        <param name="suggestion" value="''"/>
+    </pattern>
+
+    <pattern id="obsolete.a.name" is-a="obsolete.attribute">
+        <param name="element" value="h:a"/>
+        <param name="attribute" value="name"/>
+        <param name="suggestion" value="'An id attribute on the nearest container should be used instead.'"/>
     </pattern>
 
 </schema>

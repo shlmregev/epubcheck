@@ -22,8 +22,11 @@
 
 package com.adobe.epubcheck.ops;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 import org.w3c.epubcheck.constants.MIMEType;
 import org.w3c.epubcheck.core.references.Reference;
@@ -65,20 +68,37 @@ public class OPSHandler extends XMLHandler
     super(context);
   }
 
-  private void checkPaint(String attr)
+  private void checkSVGAttributeURLValue(String attributeName)
   {
-    String paint = currentElement().getAttribute(attr);
-    if (paint != null && paint.startsWith("url(")
-        && paint.endsWith(")"))
+    String value = currentElement().getAttribute(attributeName);
+    // TODO replace by proper url-value parsing
+    // see https://drafts.csswg.org/css-values-3/#urls
+    if (value != null && value.startsWith("url(")
+        && value.endsWith(")"))
     {
-      URL url = checkURL(paint.substring(4, paint.length() - 1));
-      registerReference(url, Reference.Type.SVG_PAINT);
+      value = value.substring(4, value.length() - 1);
+      if ((value.charAt(0) == '\'' && value.charAt(value.length() - 1) == '\'')
+          || (value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"'))
+      {
+        value = value.substring(1, value.length() - 1);
+      }
+      URL url = checkURL(value);
+      switch (attributeName)
+      {
+      case "fill":
+      case "stroke":
+        registerReference(url, Reference.Type.SVG_PAINT);
+        break;
+      case "clip-path":
+        registerReference(url, Reference.Type.SVG_CLIP_PATH);
+        break;
+      }
     }
   }
 
-  protected void checkImage(String attrNS, String attr)
+  protected void checkImage(String href)
   {
-    URL imageURL = checkURL(currentElement().getAttributeNS(attrNS, attr));
+    URL imageURL = checkURL(href);
     if (imageURL != null)
     {
       registerReference(imageURL, Reference.Type.IMAGE);
@@ -111,16 +131,22 @@ public class OPSHandler extends XMLHandler
 
   protected void checkSymbol()
   {
-    URL href = checkURL(currentElement().getAttributeNS("http://www.w3.org/1999/xlink", "href"));
-    if (href != null)
-    {
-      registerReference(href, Reference.Type.SVG_SYMBOL);
-    }
+    getSVGHrefs().forEach(href -> {
+      URL url = checkURL(href);
+      if (url != null)
+      {
+        registerReference(url, Reference.Type.SVG_SYMBOL);
+      }
+    });
   }
 
-  private void checkHRef(String attrNS, String attr)
+  protected List<String> getSVGHrefs()
   {
-    String href = currentElement().getAttributeNS(attrNS, attr);
+    return Arrays.asList(currentElement().getAttributeNS("http://www.w3.org/1999/xlink", "href"));
+  }
+
+  private void checkHRef(String href)
+  {
     if (href == null)
     {
       return;
@@ -157,14 +183,14 @@ public class OPSHandler extends XMLHandler
     processHyperlink(url);
   }
 
-  protected URL checkSVGFontFaceURI()
+  protected List<URL> checkSVGFontFaceURI()
   {
-    URL href = checkURL(currentElement().getAttributeNS("http://www.w3.org/1999/xlink", "href"));
-    if (href != null)
-    {
-      registerReference(href, Reference.Type.FONT);
-    }
-    return href;
+    List<URL> urls = getSVGHrefs().stream()
+        .map(href -> checkURL(href))
+        .filter(url -> url != null)
+        .collect(Collectors.toList());
+    urls.forEach(url -> registerReference(url, Reference.Type.FONT));
+    return urls;
   }
 
   protected void processHyperlink(URL href)
@@ -216,7 +242,7 @@ public class OPSHandler extends XMLHandler
         }
         else if (name.equals("a"))
         {
-          checkHRef("http://www.w3.org/1999/xlink", "href");
+          getSVGHrefs().forEach(href -> checkHRef(href));
         }
         else if (name.equals("use"))
         {
@@ -224,7 +250,7 @@ public class OPSHandler extends XMLHandler
         }
         else if (name.equals("image"))
         {
-          checkImage("http://www.w3.org/1999/xlink", "href");
+          getSVGHrefs().forEach(href -> checkImage(href));
         }
         else if (name.equals("font-face-uri"))
         {
@@ -234,18 +260,19 @@ public class OPSHandler extends XMLHandler
         {
           checkScript();
         }
-        checkPaint("fill");
-        checkPaint("stroke");
+        checkSVGAttributeURLValue("fill");
+        checkSVGAttributeURLValue("stroke");
+        checkSVGAttributeURLValue("clip-path");
       }
       else if (ns.equals(EpubConstants.HtmlNamespaceUri))
       {
         if (name.equals("a") || name.equals("area"))
         {
-          checkHRef(null, "href");
+          checkHRef(e.getAttribute("href"));
         }
         else if (name.equals("img"))
         {
-          checkImage(null, "src");
+          checkImage(e.getAttribute("src"));
         }
         else if (name.equals("object"))
         {

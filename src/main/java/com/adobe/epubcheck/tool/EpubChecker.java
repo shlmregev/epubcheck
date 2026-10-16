@@ -37,12 +37,14 @@ import java.util.regex.Pattern;
 import org.w3c.epubcheck.core.Checker;
 import org.w3c.epubcheck.util.url.URLUtils;
 
+import com.adobe.epubcheck.api.EPUBLocation;
 import com.adobe.epubcheck.api.EPUBProfile;
 import com.adobe.epubcheck.api.EpubCheck;
 import com.adobe.epubcheck.api.EpubCheckFactory;
 import com.adobe.epubcheck.api.LocalizableReport;
 import com.adobe.epubcheck.api.Report;
 import com.adobe.epubcheck.messages.MessageDictionaryDumper;
+import com.adobe.epubcheck.messages.MessageId;
 import com.adobe.epubcheck.nav.NavChecker;
 import com.adobe.epubcheck.opf.OPFChecker;
 import com.adobe.epubcheck.opf.OPFChecker30;
@@ -57,7 +59,6 @@ import com.adobe.epubcheck.util.EPUBVersion;
 import com.adobe.epubcheck.util.FeatureEnum;
 import com.adobe.epubcheck.util.FileResourceProvider;
 import com.adobe.epubcheck.util.GenericResourceProvider;
-import com.adobe.epubcheck.util.InvalidVersionException;
 import com.adobe.epubcheck.util.Messages;
 import com.adobe.epubcheck.util.OPSType;
 import com.adobe.epubcheck.util.ReportingLevel;
@@ -72,8 +73,10 @@ import io.mola.galimatias.URL;
 public class EpubChecker
 {
 
-  static {
-    /* fix #665 (window-less "Checker" gui app on Mac)
+  static
+  {
+    /*
+     * fix #665 (window-less "Checker" gui app on Mac)
      * set -Djava.awt.headless=true programmatically as early as possible
      */
     System.setProperty("java.awt.headless", "true");
@@ -96,10 +99,13 @@ public class EpubChecker
   boolean displayVersion = false;
   boolean useCustomMessageFile = false;
   boolean failOnWarnings = false;
+  int maxOfEachMessage = Report.DEFAULT_MAX_OF_EACH_MESSAGE;
   private Messages messages = Messages.getInstance();
   private Locale locale = Locale.getDefault();
-  
+
   int reportingLevel = ReportingLevel.Info;
+
+  Report report = null;
 
   private static final HashMap<OPSType, String> modeMimeTypeMap;
   private static final String EPUBCHECK_CUSTOM_MESSAGE_FILE = "ePubCheckCustomMessageFile";
@@ -119,15 +125,19 @@ public class EpubChecker
     modeMimeTypeMap = map;
   }
 
-  public Locale getLocale() {
+  public Locale getLocale()
+  {
     return locale;
   }
-  
 
+  public Report getReport()
+  {
+    return report;
+  }
 
   public int run(String[] args)
   {
-    Report report = null;
+    report = null;
     int returnValue = 1;
     try
     {
@@ -157,15 +167,16 @@ public class EpubChecker
       }
     } catch (Exception ignored)
     {
-      returnValue = 1;
-    } finally
-    {
-      if (report != null) {
-        printEpubCheckCompleted(report);
-      }
+      // Unexpected exception
+      returnValue = 2;
     }
-    return returnValue;  
+    if (report != null && returnValue < 2)
+    {
+      printEpubCheckCompleted(report);
+    }
+    return returnValue;
   }
+
   @Deprecated
   public int processEpubFile(String[] args)
   {
@@ -184,7 +195,7 @@ public class EpubChecker
         resourceProvider = new URLResourceProvider();
       } catch (GalimatiasParseException e)
       {
-        //FIXME 2022 add dedicate message
+        // FIXME 2022 add dedicate message
         System.err.println(String.format(messages.get("file_not_found"), path));
         return 1;
       }
@@ -209,17 +220,23 @@ public class EpubChecker
     ValidationContext context = new ValidationContextBuilder().url(url)
         .report(report).resourceProvider(resourceProvider).mimetype(modeMimeTypeMap.get(opsType))
         .version(version).profile(profile).build();
-    
+
     Checker checker = null;
-    if (mode == null) {
+    if (mode == null)
+    {
       checker = EpubCheckFactory.getInstance().newInstance(context);
-    } else {
+    }
+    else
+    {
       switch (mode)
       {
       case "opf":
-        if (version == EPUBVersion.VERSION_2) {
+        if (version == EPUBVersion.VERSION_2)
+        {
           checker = new OPFChecker(context);
-        } else {
+        }
+        else
+        {
           checker = new OPFChecker30(context);
         }
         break;
@@ -237,23 +254,21 @@ public class EpubChecker
         break;
       }
     }
-    
+
     if (checker == null)
     {
       outWriter.println(messages.get("display_help"));
       System.err.println(String.format(messages.get("mode_version_not_supported"), mode, version));
-
-      throw new RuntimeException(String.format(messages.get("mode_version_not_supported"), mode,
-          version));
+      return 1;
     }
-
 
     if (checker.getClass() == EpubCheck.class)
     {
       int validationResult = ((EpubCheck) checker).doValidate();
       if (validationResult == 0)
       {
-        if (!((jsonOutput||xmlOutput||xmpOutput) && fileOut==null)) {
+        if (!((jsonOutput || xmlOutput || xmpOutput) && fileOut == null))
+        {
           outWriter.println(messages.get("no_errors__or_warnings"));
         }
         return 0;
@@ -269,14 +284,17 @@ public class EpubChecker
     else
     {
       checker.check();
-      if (report.getWarningCount() == 0 && report.getFatalErrorCount() == 0 && report.getErrorCount() == 0)
+      if (report.getWarningCount() == 0 && report.getFatalErrorCount() == 0
+          && report.getErrorCount() == 0)
       {
-        if (!((jsonOutput||xmlOutput||xmpOutput) && fileOut==null)) {
+        if (!((jsonOutput || xmlOutput || xmpOutput) && fileOut == null))
+        {
           outWriter.println(messages.get("no_errors__or_warnings"));
         }
         return 0;
       }
-      else if (report.getWarningCount() > 0 && report.getFatalErrorCount() == 0 && report.getErrorCount() == 0)
+      else if (report.getWarningCount() > 0 && report.getFatalErrorCount() == 0
+          && report.getErrorCount() == 0)
       {
         System.err.println(messages.get("there_were_warnings"));
         return failOnWarnings ? 1 : 0;
@@ -288,8 +306,7 @@ public class EpubChecker
       }
     }
   }
-  
-  
+
   private int processFile(Report report)
   {
     report.info(null, FeatureEnum.TOOL_NAME, "epubcheck");
@@ -324,13 +341,13 @@ public class EpubChecker
         }
 
       }
-    if (mode != null)
-    {
-      report.info(null, FeatureEnum.EXEC_MODE,
-          String.format(messages.get("single_file"), mode, version.toString(), profile));
-    }
-    result = validateFile(path, version, report, profile);
-      if (expanded && epub!=null)
+      if (mode != null)
+      {
+        report.info(null, FeatureEnum.EXEC_MODE,
+            String.format(messages.get("single_file"), mode, version.toString(), profile));
+      }
+      result = validateFile(path, version, report, profile);
+      if (expanded && epub != null)
       {
         if (!keep || (report.getErrorCount() > 0) || (report.getFatalErrorCount() > 0))
         {
@@ -343,11 +360,11 @@ public class EpubChecker
         }
       }
 
-
       return result;
-    } catch (Throwable e)
+    } catch (RuntimeException e)
     {
       e.printStackTrace();
+      report.message(MessageId.RSC_016, EPUBLocation.of(new File(path)), e);
       return 1;
     } finally
     {
@@ -355,40 +372,46 @@ public class EpubChecker
     }
   }
 
-
   private void printEpubCheckCompleted(Report report)
   {
-    if(report != null) {
+    if (report != null)
+    {
       StringBuilder messageCount = new StringBuilder();
       int count;
       String variant;
-      if(reportingLevel <= ReportingLevel.Fatal) {
+      if (reportingLevel <= ReportingLevel.Fatal)
+      {
         messageCount.append(messages.get("messages") + ": ");
         count = report.getFatalErrorCount();
         variant = (count == 0) ? "zero" : (count == 1) ? "one" : "many";
-        messageCount.append(String.format(messages.get("counter_fatal_"+variant), count));
+        messageCount.append(String.format(messages.get("counter_fatal_" + variant), count));
       }
-      if(reportingLevel <= ReportingLevel.Error) {
+      if (reportingLevel <= ReportingLevel.Error)
+      {
         count = report.getErrorCount();
         variant = (count == 0) ? "zero" : (count == 1) ? "one" : "many";
-        messageCount.append(" / " + String.format(messages.get("counter_error_"+variant), count));
+        messageCount.append(" / " + String.format(messages.get("counter_error_" + variant), count));
       }
-      if(reportingLevel <= ReportingLevel.Warning) {
+      if (reportingLevel <= ReportingLevel.Warning)
+      {
         count = report.getWarningCount();
         variant = (count == 0) ? "zero" : (count == 1) ? "one" : "many";
-        messageCount.append(" / " + String.format(messages.get("counter_warn_"+variant), count));
+        messageCount.append(" / " + String.format(messages.get("counter_warn_" + variant), count));
       }
-      if(reportingLevel <= ReportingLevel.Info) {
+      if (reportingLevel <= ReportingLevel.Info)
+      {
         count = report.getInfoCount();
         variant = (count == 0) ? "zero" : (count == 1) ? "one" : "many";
-        messageCount.append(" / " + String.format(messages.get("counter_info_"+variant), count));
+        messageCount.append(" / " + String.format(messages.get("counter_info_" + variant), count));
       }
-      if(reportingLevel <= ReportingLevel.Usage) {
+      if (reportingLevel <= ReportingLevel.Usage)
+      {
         count = report.getUsageCount();
         variant = (count == 0) ? "zero" : (count == 1) ? "one" : "many";
-        messageCount.append(" / " + String.format(messages.get("counter_usage_"+variant), count));
+        messageCount.append(" / " + String.format(messages.get("counter_usage_" + variant), count));
       }
-      if(messageCount.length() > 0) {
+      if (messageCount.length() > 0)
+      {
         messageCount.append("\n");
         outWriter.println(messageCount);
       }
@@ -453,12 +476,20 @@ public class EpubChecker
       {
         pw = new PrintWriter(fileOut, "UTF-8");
       }
-      if (xmlOutput) {
+      if (xmlOutput)
+      {
         report = new XmlReportImpl(pw, path, EpubCheck.version());
-      } else if (xmpOutput) {
+        report.setMaxOfEachMessage(maxOfEachMessage);
+      }
+      else if (xmpOutput)
+      {
         report = new XmpReportImpl(pw, path, EpubCheck.version());
-      } else {
+        report.setMaxOfEachMessage(maxOfEachMessage);
+      }
+      else
+      {
         report = new CheckingReport(pw, path);
+        report.setMaxOfEachMessage(maxOfEachMessage);
       }
     }
     else
@@ -474,6 +505,7 @@ public class EpubChecker
 
     return report;
   }
+
   /**
    * This method iterates through all of the arguments passed to main to find
    * accepted flags and the name of the file to check. This method returns the
@@ -484,7 +516,7 @@ public class EpubChecker
    * -v or -version = display tool version number
    *
    * @param args
-   *          String[] containing arguments passed to main
+   *        String[] containing arguments passed to main
    * @return the name of the file to check
    */
   private boolean processArguments(String[] args)
@@ -499,271 +531,307 @@ public class EpubChecker
     setCustomMessageFileFromEnvironment();
 
     Pattern argPattern = Pattern.compile("--?(.*)");
-    
+
     for (int i = 0; i < args.length; i++)
     {
       Matcher argMatch = argPattern.matcher(args[i]);
-      if (argMatch.matches()){
-        switch (argMatch.group(1)) {
-          case "v": 
-              if (i + 1 < args.length)
-              {
-                ++i;
-                if (args[i].equals("2.0") || args[i].equals("2"))
-                {
-                  version = EPUBVersion.VERSION_2;
-                }
-                else if (args[i].equals("3.0") || args[i].equals("3"))
-                {
-                  version = EPUBVersion.VERSION_3;
-                }
-                else
-                {
-                  outWriter.println(messages.get("display_help"));
-                  throw new RuntimeException(new InvalidVersionException(
-                      InvalidVersionException.UNSUPPORTED_VERSION));
-                }
-              }
-              else
-              {
-                outWriter.println(messages.get("display_help"));
-                throw new RuntimeException(messages.get("version_argument_expected"));
-              }
-            break;
-          case "m":
-          case "mode":
-              if (i + 1 < args.length)
-              {
-                mode = args[++i];
-                expanded = mode.equals("exp");
-              }
-              else
-              {
-                outWriter.println(messages.get("display_help"));
-                throw new RuntimeException(messages.get("mode_argument_expected"));
-              }
-            break;
-          case "p":
-          case "profile":
-              if (i + 1 < args.length)
-              {
-                String profileStr = args[++i];
-                try
-                {
-                  profile = EPUBProfile.valueOf(profileStr.toUpperCase(Locale.ROOT));
-                } catch (IllegalArgumentException e)
-                {
-                  System.err.println(messages.get("mode_version_ignored", profileStr));
-                  profile = EPUBProfile.DEFAULT;
-                }
-              }
-              else
-              {
-                outWriter.println(messages.get("display_help"));
-                throw new RuntimeException(messages.get("profile_argument_expected"));
-              } 
-            break;
-          case "s":
-          case "save":
-              keep = true;
-            break;
-          case "o":
-          case "out":
-              if ((args.length > (i + 1)) && !(args[i + 1].startsWith("-")))
-              {
-                fileOut = new File(args[++i]);
-              }
-              else if ((args.length > (i + 1)) && (args[i + 1].equalsIgnoreCase("-")))
-              {
-                fileOut = null;
-                i++;
-              }
-              else
-              {
-                File pathFile = new File(path);
-                if (pathFile.isDirectory())
-                {
-                  fileOut = new File(pathFile.getAbsoluteFile().getParentFile(), pathFile.getName()
-                      + "check.xml");
-                }
-                else
-                {
-                  fileOut = new File(path + "check.xml");
-                }
-              }
-              xmlOutput = true;
-            break;
-          case "j":
-          case "json":
-              if ((args.length > (i + 1)) && !(args[i + 1].startsWith("-")))
-              {
-                fileOut = new File(args[++i]);
-              }
-              else if ((args.length > (i + 1)) && (args[i + 1].equalsIgnoreCase("-")))
-              {
-                fileOut = null;
-                i++;
-              }
-              else
-              {
-                File pathFile = new File(path);
-                if (pathFile.isDirectory())
-                {
-                  fileOut = new File(pathFile.getAbsoluteFile().getParentFile(), pathFile.getName()
-                      + "check.json");
-                }
-                else
-                {
-                  fileOut = new File(path + "check.json");
-                }
-              }
-              jsonOutput = true;
-            break;
-          case "x":
-          case "xmp":
-              if ((args.length > (i + 1)) && !(args[i + 1].startsWith("-")))
-              {
-                fileOut = new File(args[++i]);
-              }
-              else if ((args.length > (i + 1)) && (args[i + 1].equalsIgnoreCase("-")))
-              {
-                fileOut = null;
-                i++;
-              }
-              else
-              {
-                File pathFile = new File(path);
-                if (pathFile.isDirectory())
-                {
-                  fileOut = new File(pathFile.getAbsoluteFile().getParentFile(), pathFile.getName()
-                      + "check.xmp");
-                }
-                else
-                {
-                  fileOut = new File(path + "check.xmp");
-                }
-              }
-              xmpOutput = true;
-            break;
-          case "i":
-          case "info":
-              reportingLevel = ReportingLevel.Info;
-            break;
-          case "f":
-          case "fatal":
-              reportingLevel = ReportingLevel.Fatal;
-            break;
-          case "e":
-          case "error":
-              reportingLevel = ReportingLevel.Error;
-            break;
-          case "w":
-          case "warn":
-              reportingLevel = ReportingLevel.Warning;
-            break;
-          case "u":
-          case "usage":
-              reportingLevel = ReportingLevel.Usage;
-            break;
-          case "q":
-          case "quiet":
-              outWriter.setQuiet(true);
-            break;
-          case "failonwarnings":
-              failOnWarnings = true;
-            break;
-          case "r":
-          case "redir":
-              if (i + 1 < args.length)
-              {
-                fileOut = new File(args[++i]);
-              }
-            break;
-          case "c":
-          case "customMessages":
-              if (i + 1 < args.length)
-              {
-                String fileName = args[i + 1];
-                if ("none".compareTo(fileName.toLowerCase(Locale.ROOT)) == 0)
-                {
-                  customMessageFile = null;
-                  useCustomMessageFile = false;
-                  ++i;
-                }
-                else if (!fileName.startsWith("-"))
-                {
-                  customMessageFile = new File(fileName);
-                  useCustomMessageFile = true;
-                  ++i;
-                }
-                else
-                {
-                  System.err.println(String.format(messages.get("expected_message_filename"), fileName));
-                  displayHelp();
-                  return false;
-                }
-              }
-              break;
-          case "l":
-          case "listChecks":
-              if (i + 1 < args.length)
-              {
-                if (!args[i + 1].startsWith("-"))
-                {
-                  listChecksOut = new File(args[++i]);
-                }
-                else
-                {
-                  listChecksOut = null;
-                }
-              }
-              listChecks = true;
-            break;
-          case "locale":
-              if(i + 1 < args.length) 
-              {
-                  if(args[i + 1].startsWith("-"))
-                  {
-                      System.err.println(String.format(messages.get("incorrect_locale"), args[i + 1]));
-                      displayHelp();
-                      return false;
-                  }
-                  else
-                  {
-                      String langTag = args[++i];
-                      // Rather than attempting to validate the locale, we will just
-                      // allow it to fallback to the default in the case of invalid
-                      // language tags.
-                      this.locale = Locale.forLanguageTag(langTag);
-                      this.messages = Messages.getInstance(this.locale);
-                  }
-              }
-              else
-              {
-                  System.err.println(String.format(messages.get("missing_locale")));
-                  displayHelp();
-                  return false;
-              }
-              break;
-          case "h":
-          case "?":
-          case "help":
-              displayHelp(); // display help message
-              displayHelp = true;
-              break;
-          case "version":
-            displayVersion();
-            displayVersion = true;
-            break;
-          default:
+      if (argMatch.matches())
+      {
+        switch (argMatch.group(1))
+        {
+        case "v":
+          if (i + 1 < args.length)
+          {
+            ++i;
+            if (args[i].equals("2.0") || args[i].equals("2"))
+            {
+              version = EPUBVersion.VERSION_2;
+            }
+            else if (args[i].equals("3.0") || args[i].equals("3"))
+            {
+              version = EPUBVersion.VERSION_3;
+            }
+            else
+            {
               System.err.println(String.format(messages.get("unrecognized_argument"), args[i]));
               displayHelp();
               return false;
+            }
+          }
+          else
+          {
+            System.err.println(messages.get("version_argument_expected"));
+            displayHelp();
+            return false;
+          }
+          break;
+        case "m":
+        case "mode":
+          if (i + 1 < args.length)
+          {
+            mode = args[++i];
+            expanded = mode.equals("exp");
+          }
+          else
+          {
+            System.err.println(messages.get("mode_argument_expected"));
+            displayHelp();
+            return false;
+          }
+          break;
+        case "p":
+        case "profile":
+          if (i + 1 < args.length)
+          {
+            String profileStr = args[++i];
+            try
+            {
+              profile = EPUBProfile.valueOf(profileStr.toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e)
+            {
+              System.err.println(messages.get("mode_version_ignored", profileStr));
+              profile = EPUBProfile.DEFAULT;
+            }
+          }
+          else
+          {
+            System.err.println(messages.get("profile_argument_expected"));
+            displayHelp();
+            return false;
+          }
+          break;
+        case "s":
+        case "save":
+          keep = true;
+          break;
+        case "o":
+        case "out":
+          if ((args.length > (i + 1)) && !(args[i + 1].startsWith("-")))
+          {
+            fileOut = new File(args[++i]);
+          }
+          else if ((args.length > (i + 1)) && (args[i + 1].equalsIgnoreCase("-")))
+          {
+            fileOut = null;
+            i++;
+          }
+          else
+          {
+            File pathFile = new File(path);
+            if (pathFile.isDirectory())
+            {
+              fileOut = new File(pathFile.getAbsoluteFile().getParentFile(), pathFile.getName()
+                  + "check.xml");
+            }
+            else
+            {
+              fileOut = new File(path + "check.xml");
+            }
+          }
+          xmlOutput = true;
+          break;
+        case "j":
+        case "json":
+          if ((args.length > (i + 1)) && !(args[i + 1].startsWith("-")))
+          {
+            fileOut = new File(args[++i]);
+          }
+          else if ((args.length > (i + 1)) && (args[i + 1].equalsIgnoreCase("-")))
+          {
+            fileOut = null;
+            i++;
+          }
+          else
+          {
+            File pathFile = new File(path);
+            if (pathFile.isDirectory())
+            {
+              fileOut = new File(pathFile.getAbsoluteFile().getParentFile(), pathFile.getName()
+                  + "check.json");
+            }
+            else
+            {
+              fileOut = new File(path + "check.json");
+            }
+          }
+          jsonOutput = true;
+          break;
+        case "x":
+        case "xmp":
+          if ((args.length > (i + 1)) && !(args[i + 1].startsWith("-")))
+          {
+            fileOut = new File(args[++i]);
+          }
+          else if ((args.length > (i + 1)) && (args[i + 1].equalsIgnoreCase("-")))
+          {
+            fileOut = null;
+            i++;
+          }
+          else
+          {
+            File pathFile = new File(path);
+            if (pathFile.isDirectory())
+            {
+              fileOut = new File(pathFile.getAbsoluteFile().getParentFile(), pathFile.getName()
+                  + "check.xmp");
+            }
+            else
+            {
+              fileOut = new File(path + "check.xmp");
+            }
+          }
+          xmpOutput = true;
+          break;
+        case "i":
+        case "info":
+          reportingLevel = ReportingLevel.Info;
+          break;
+        case "f":
+        case "fatal":
+          reportingLevel = ReportingLevel.Fatal;
+          break;
+        case "e":
+        case "error":
+          reportingLevel = ReportingLevel.Error;
+          break;
+        case "w":
+        case "warn":
+          reportingLevel = ReportingLevel.Warning;
+          break;
+        case "u":
+        case "usage":
+          reportingLevel = ReportingLevel.Usage;
+          break;
+        case "q":
+        case "quiet":
+          outWriter.setQuiet(true);
+          break;
+        case "failonwarnings":
+          failOnWarnings = true;
+          break;
+        case "r":
+        case "redir":
+          if (i + 1 < args.length)
+          {
+            fileOut = new File(args[++i]);
+          }
+          break;
+        case "c":
+        case "customMessages":
+          if (i + 1 < args.length)
+          {
+            String fileName = args[i + 1];
+            if ("none".compareTo(fileName.toLowerCase(Locale.ROOT)) == 0)
+            {
+              customMessageFile = null;
+              useCustomMessageFile = false;
+              ++i;
+            }
+            else if (!fileName.startsWith("-"))
+            {
+              customMessageFile = new File(fileName);
+              useCustomMessageFile = true;
+              ++i;
+            }
+            else
+            {
+              System.err
+                  .println(String.format(messages.get("expected_message_filename"), fileName));
+              displayHelp();
+              return false;
+            }
+          }
+          break;
+        case "l":
+        case "listChecks":
+          if (i + 1 < args.length)
+          {
+            if (!args[i + 1].startsWith("-"))
+            {
+              listChecksOut = new File(args[++i]);
+            }
+            else
+            {
+              listChecksOut = null;
+            }
+          }
+          listChecks = true;
+          break;
+        case "locale":
+          if (i + 1 < args.length)
+          {
+            if (args[i + 1].startsWith("-"))
+            {
+              System.err.println(String.format(messages.get("incorrect_locale"), args[i + 1]));
+              displayHelp();
+              return false;
+            }
+            else
+            {
+              String langTag = args[++i];
+              // Rather than attempting to validate the locale, we will just
+              // allow it to fallback to the default in the case of invalid
+              // language tags.
+              this.locale = Locale.forLanguageTag(langTag);
+              this.messages = Messages.getInstance(this.locale);
+            }
+          }
+          else
+          {
+            System.err.println(String.format(messages.get("missing_locale")));
+            displayHelp();
+            return false;
+          }
+          break;
+        case "maxOfEachMessage":
+        case "maxofeachmessage":
+          if (i + 1 < args.length)
+          {
+            String maxValue = args[++i];
+            if (maxValue.equals("unlimited"))
+            {
+              maxOfEachMessage = -1;
+            }
+            else
+            {
+              try
+              {
+                maxOfEachMessage = Integer.parseInt(maxValue);
+              } catch (NumberFormatException e)
+              {
+                System.err.println(String.format(messages.get("incorrect_maxofeach"), maxValue));
+                displayHelp();
+                return false;
+              }
+            }
+          }
+          else
+          {
+            System.err.println(String.format(messages.get("missing_maxofeach")));
+            displayHelp();
+            return false;
+          }
+          break;
+        case "h":
+        case "?":
+        case "help":
+          displayHelp(); // display help message
+          displayHelp = true;
+          break;
+        case "version":
+          displayVersion();
+          displayVersion = true;
+          break;
+        default:
+          System.err.println(String.format(messages.get("unrecognized_argument"), args[i]));
+          displayHelp();
+          return false;
         }
-        
-        
-      }else{
-        //System.out.println("No match: " + args[i]);
+
+      }
+      else
+      {
+        // System.out.println("No match: " + args[i]);
         if (path == null)
         {
           path = args[i];
@@ -850,9 +918,9 @@ public class EpubChecker
    */
   private void displayHelp()
   {
-      outWriter.println(String.format(messages.get("help_text"), EpubCheck.version()));
+    outWriter.println(String.format(messages.get("help_text"), EpubCheck.version()));
   }
-  
+
   /**
    * This method displays the EpubCheck version.
    */

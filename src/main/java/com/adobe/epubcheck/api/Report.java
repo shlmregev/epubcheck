@@ -22,18 +22,20 @@
 
 package com.adobe.epubcheck.api;
 
-import com.adobe.epubcheck.messages.Message;
+import java.io.File;
+
 import com.adobe.epubcheck.messages.MessageDictionary;
 import com.adobe.epubcheck.messages.MessageId;
 import com.adobe.epubcheck.util.FeatureEnum;
-
-import java.io.File;
 
 /**
  * Interface that is used to report issues found in epub.
  */
 public interface Report
 {
+
+
+  public static final int DEFAULT_MAX_OF_EACH_MESSAGE = 25;
   /**
    * Called when a violation of the standard is found in epub.
    *
@@ -43,16 +45,6 @@ public interface Report
    *                 string for the message.
    */
   public void message(MessageId id, EPUBLocation location, Object... args);
-
-  /**
-   * Called when a violation of the standard is found in epub.
-   *
-   * @param message  The message being reported
-   * @param location location information for the message
-   * @param args     Arguments referenced by the format
-   *                 string for the message.
-   */
-  void message(Message message, EPUBLocation location, Object... args);
 
   /**
    * Called when when a feature is found in epub.
@@ -95,6 +87,10 @@ public interface Report
   public int getReportingLevel();
 
   public void setReportingLevel(int level);
+
+  public int getMaxOfEachMessage();
+
+  public void setMaxOfEachMessage(int max);
 
   void close();
 

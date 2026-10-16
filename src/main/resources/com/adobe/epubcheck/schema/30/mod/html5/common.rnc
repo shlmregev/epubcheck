@@ -105,6 +105,7 @@ common.attrs =
 	&	common.attrs.i18n
 	&	common.attrs.present
 	&	common.attrs.other
+	&	aria.global?
 	)
 
 common.attrs.basic =
@@ -147,7 +148,7 @@ common.attrs.i18n =
 	)
 	common.attrs.dir =
 		attribute dir {
-			 "ltr" |  "rtl" |  "auto"
+			"ltr" | "rtl" | "auto"
 		}
 	# This lang definition is a hack for environments where
 	# the HTML5 parser maps lang to xml:lang.
@@ -178,7 +179,7 @@ common.attrs.i18n =
 #		} & XMLonly
 	common.attrs.translate =
 		attribute translate {
-			 "" |  "yes" |  "no"
+			"" | "yes" | "no"
 		}
 
 common.attrs.present =
@@ -228,7 +229,7 @@ common.attrs.other =
 
 	common.attrs.inert = 
 		attribute inert {
-			string "inert" | string ""
+			"inert" | ""
 		}
 
 # #####################################################################
@@ -265,7 +266,7 @@ common.attrs.other =
 		datatype.html5.space.separated.tokens
 
 	common.data.name =
-		datatype.html5.token
+		datatype.html5.token #FIXME
 
 	common.data.hash-name =
 		datatype.html5.name.reference	
@@ -345,7 +346,7 @@ common.attrs.other =
 		)
 
 	common.data.uri.non-empty =
-		datatype.string.nonempty
+		datatype.IRI
 
 	common.data.uris =
 		list { datatype.IRI* }
@@ -413,7 +414,7 @@ common.attrs.other =
 ## Language Codes
 
 	common.data.langcode =
-		 "" | datatype.languagecode
+		"" | datatype.languagecode
 
 ## List of Key Labels
 	common.data.keylabellist =
@@ -437,8 +438,7 @@ common.attrs.other =
 
 ## List of sandbox keywords
 	common.data.sandbox-allow-list =
-		 "" | list { 'allow-top-navigation'?, 'allow-same-origin'?, 'allow-forms'?, 'allow-scripts'? }
-        | list { 'allow-top-navigation'?, 'allow-same-origin'?, 'allow-scripts'?, 'allow-forms'? }
+		"" | datatype.html5.sandboxallowlist
 
 ## Custom element name
 	common.data.custom.element.name =
@@ -489,7 +489,6 @@ common.attrs.aria.role.checkbox = ( notAllowed )
 common.attrs.aria.role.combobox = ( notAllowed )
 common.attrs.aria.role.complementary = ( notAllowed )
 common.attrs.aria.role.dialog = ( notAllowed )
-common.attrs.aria.role.directory = ( notAllowed )
 common.attrs.aria.role.document = ( notAllowed )
 common.attrs.aria.role.feed |= ( notAllowed )
 common.attrs.aria.role.figure |= ( notAllowed )

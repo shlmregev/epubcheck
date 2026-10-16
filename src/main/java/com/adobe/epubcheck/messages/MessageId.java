@@ -30,7 +30,7 @@ public enum MessageId implements Comparable<MessageId>
 {
   // General info messages
   INF_001("INF-001"),
-  
+
   // Messages relating to accessibility
   ACC_001("ACC-001"),
   ACC_002("ACC-002"),
@@ -140,6 +140,8 @@ public enum MessageId implements Comparable<MessageId>
   HTM_060a("HTM_060a"),
   HTM_060b("HTM_060b"),
   HTM_061("HTM_061"),
+  HTM_062("HTM_062"),
+  HTM_063("HTM_063"),
 
   // Messages associated with media (images, audio and video)
   MED_001("MED-001"),
@@ -181,6 +183,9 @@ public enum MessageId implements Comparable<MessageId>
   NCX_004("NCX-004"),
   NCX_005("NCX-005"),
   NCX_006("NCX-006"),
+
+  // Obsolete features
+  OBS_001("OBS-001", LOCALIZED_ARG.YES),
 
   // Messages related to the markup in the OPF file
   OPF_001("OPF-001"),
@@ -276,6 +281,7 @@ public enum MessageId implements Comparable<MessageId>
   OPF_085("OPF-085"),
   OPF_086("OPF-086"),
   OPF_086b("OPF-086b"),
+  OPF_086c("OPF-086c"),
   OPF_087("OPF-087"),
   OPF_088("OPF-088"),
   OPF_089("OPF-089"),
@@ -290,6 +296,7 @@ public enum MessageId implements Comparable<MessageId>
   OPF_097("OPF-097"),
   OPF_098("OPF-098"),
   OPF_099("OPF-099"),
+  OPF_100("OPF-100"),
 
   // Messages relating to the entire package
   PKG_001("PKG-001"),
@@ -297,7 +304,7 @@ public enum MessageId implements Comparable<MessageId>
   PKG_004("PKG-004"),
   PKG_005("PKG-005"),
   PKG_006("PKG-006"),
-  PKG_007("PKG-007"),
+  PKG_007("PKG-007", LOCALIZED_ARG.YES),
   PKG_008("PKG-008"),
   PKG_009("PKG-009"),
   PKG_010("PKG-010"),
@@ -354,6 +361,9 @@ public enum MessageId implements Comparable<MessageId>
   RSC_031("RSC-031"),
   RSC_032("RSC-032"),
   RSC_033("RSC-033"),
+  RSC_034("RSC-034"),
+  RSC_035("RSC-035"),
+  RSC_036("RSC-036"),
 
   // Messages relating to scripting
   SCP_001("SCP-001"),
@@ -367,11 +377,29 @@ public enum MessageId implements Comparable<MessageId>
   SCP_009("SCP-009"),
   SCP_010("SCP-010");
 
-  private final String messageId;
-
-  MessageId(String feature)
+  private enum LOCALIZED_ARG
   {
-    this.messageId = feature;
+    NONE,
+    YES
+  }
+
+  private final String messageId;
+  private boolean hasLocalizedArgument;
+
+  private MessageId(String messageId)
+  {
+    this(messageId, LOCALIZED_ARG.NONE);
+  }
+
+  private MessageId(String messageId, LOCALIZED_ARG localizedArgs)
+  {
+    this.messageId = messageId;
+    this.hasLocalizedArgument = localizedArgs == LOCALIZED_ARG.YES;
+  }
+
+  public boolean hasLocalizedArgument()
+  {
+    return hasLocalizedArgument;
   }
 
   public String toString()

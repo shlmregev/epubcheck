@@ -146,6 +146,8 @@ class DefaultSeverities implements Severities
     severities.put(MessageId.HTM_060a, Severity.USAGE);
     severities.put(MessageId.HTM_060b, Severity.USAGE);
     severities.put(MessageId.HTM_061, Severity.ERROR);
+    severities.put(MessageId.HTM_062, Severity.USAGE);
+    severities.put(MessageId.HTM_063, Severity.USAGE);
 
     // Media
     severities.put(MessageId.MED_001, Severity.SUPPRESSED);
@@ -187,6 +189,9 @@ class DefaultSeverities implements Severities
     severities.put(MessageId.NCX_004, Severity.USAGE);
     severities.put(MessageId.NCX_005, Severity.SUPPRESSED);
     severities.put(MessageId.NCX_006, Severity.USAGE);
+
+    // Obsolete features
+    severities.put(MessageId.OBS_001, Severity.USAGE);
 
     // OPF
     severities.put(MessageId.OPF_001, Severity.ERROR);
@@ -282,6 +287,7 @@ class DefaultSeverities implements Severities
     severities.put(MessageId.OPF_085, Severity.WARNING);
     severities.put(MessageId.OPF_086, Severity.WARNING);
     severities.put(MessageId.OPF_086b, Severity.USAGE);
+    severities.put(MessageId.OPF_086c, Severity.WARNING);
     severities.put(MessageId.OPF_087, Severity.USAGE);
     severities.put(MessageId.OPF_088, Severity.USAGE);
     severities.put(MessageId.OPF_089, Severity.ERROR);
@@ -296,6 +302,7 @@ class DefaultSeverities implements Severities
     severities.put(MessageId.OPF_097, Severity.USAGE);
     severities.put(MessageId.OPF_098, Severity.ERROR);
     severities.put(MessageId.OPF_099, Severity.ERROR);
+    severities.put(MessageId.OPF_100, Severity.USAGE);
 
     // PKG
     severities.put(MessageId.PKG_001, Severity.WARNING);
@@ -339,9 +346,9 @@ class DefaultSeverities implements Severities
     severities.put(MessageId.RSC_010, Severity.ERROR);
     severities.put(MessageId.RSC_011, Severity.ERROR);
     severities.put(MessageId.RSC_012, Severity.ERROR);
-    severities.put(MessageId.RSC_013, Severity.ERROR);
-    severities.put(MessageId.RSC_014, Severity.ERROR);
-    severities.put(MessageId.RSC_015, Severity.ERROR);
+    severities.put(MessageId.RSC_013, Severity.USAGE);
+    severities.put(MessageId.RSC_014, Severity.USAGE);
+    severities.put(MessageId.RSC_015, Severity.USAGE);
     severities.put(MessageId.RSC_016, Severity.FATAL);
     severities.put(MessageId.RSC_017, Severity.WARNING);
     severities.put(MessageId.RSC_018, Severity.SUPPRESSED); // Reported as RSC-007
@@ -360,6 +367,9 @@ class DefaultSeverities implements Severities
     severities.put(MessageId.RSC_031, Severity.WARNING);
     severities.put(MessageId.RSC_032, Severity.ERROR);
     severities.put(MessageId.RSC_033, Severity.ERROR);
+    severities.put(MessageId.RSC_034, Severity.ERROR);
+    severities.put(MessageId.RSC_035, Severity.USAGE);
+    severities.put(MessageId.RSC_036, Severity.USAGE);
 
     // Scripting
     severities.put(MessageId.SCP_001, Severity.SUPPRESSED); // checking scripts is out of scope
